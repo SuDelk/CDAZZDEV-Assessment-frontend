@@ -1,3 +1,5 @@
+import { ALL } from "dns";
+
 export const CONSTANTS = {
   // 🔐 Auth & Storage
   TOKEN: "token",
@@ -18,9 +20,9 @@ export const CONSTANTS = {
     ADMIN: {
       ROOT: "/admin",
       LOGIN: "/admin/login",
-      DASHBOARD: "/admin/dashboard",
-      COURSES: "/admin/dashboard/courses",
-      ENROLLMENTS: "/admin/dashboard/enrollments",
+      COURSES: "/admin/courses",
+      ENROLLMENTS: "/admin/enrollments",
+      STUDENTS: "/admin/students",
     },
   },
 
@@ -30,8 +32,9 @@ export const CONSTANTS = {
     COURSES: "Courses",
     ENROLLMENTS: "Enrollments",
     ADMIN: {
-      COURSES: "Manage Courses",
-      ENROLLMENTS: "Enrollment Requests",
+      COURSES: "Courses",
+      ENROLLMENTS: "Enrollments",
+      STUDENTS: "Students",
     },
   },
 
@@ -53,12 +56,16 @@ export const CONSTANTS = {
       ADMIN_LOGIN: "/auth/admin/login", // ✅ corrected admin login route
     },
 
-    USER: {
-      PROFILE: "/user/profile",
-      UPDATE: "/user/update",
+    // 👤 User Endpoints
+    USERS: {
+      ALL: "/auth", // ✅ used to fetch all users (students/admins)
+      ALL_STUDENTS: "/auth/students", // ✅ used to fetch all students
+      BY_ID: (id: string | number) => `/auth/${id}`,
+      PROFILE: "/auth/profile",
+      UPDATE: "/auth/update",
     },
 
-    // ✅ Admin also uses same course/enrollment endpoints with extra permissions
+    // 📘 Course Endpoints
     COURSES: {
       ALL: "/courses",
       BY_ID: (id: string | number) => `/courses/${id}`,
@@ -66,11 +73,13 @@ export const CONSTANTS = {
       DELETE: (id: string | number) => `/courses/${id}`,
     },
 
+    // 🧾 Enrollment Endpoints
     ENROLLMENTS: {
       ALL: "/enrollments",
       BY_ID: (id: string | number) => `/enrollments/${id}`,
-      APPROVE: (id: string | number) => `/enrollments/${id}/approve`,
-      DECLINE: (id: string | number) => `/enrollments/${id}/decline`,
+      CREATE: "/enrollments", // ✅ used in your enrollment form
+      UPDATE: (id: string | number) => `/enrollments/${id}`,
+      DELETE: (id: string | number) => `/enrollments/${id}`,
     },
   },
 

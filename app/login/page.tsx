@@ -49,7 +49,7 @@ export default function LoginPage() {
         // ✅ Redirect based on role
         if (role === "admin") {
           alert(CONSTANTS.MESSAGES.ADMIN_LOGIN_SUCCESS);
-          router.push(CONSTANTS.ROUTES.ADMIN.DASHBOARD);
+          router.push(CONSTANTS.ROUTES.ADMIN.COURSES);
         } else {
           alert(CONSTANTS.MESSAGES.LOGIN_SUCCESS);
           router.push(CONSTANTS.ROUTES.DASHBOARD);

@@ -74,6 +74,11 @@ export default function ClientLayout({
       href: CONSTANTS.ROUTES.ADMIN.ENROLLMENTS,
       icon: <Shield size={18} />,
     },
+    {
+      name: CONSTANTS.NAV.ADMIN.STUDENTS,
+      href: CONSTANTS.ROUTES.ADMIN.STUDENTS,
+      icon: <User size={18} />,
+    },
   ];
 
   // Choose nav based on role
@@ -88,7 +93,7 @@ export default function ClientLayout({
           <Link
             href={
               role === "admin"
-                ? CONSTANTS.ROUTES.ADMIN.DASHBOARD
+                ? CONSTANTS.ROUTES.ADMIN.COURSES
                 : CONSTANTS.ROUTES.DASHBOARD
             }
             className="flex items-center gap-2 hover:opacity-80 transition"
