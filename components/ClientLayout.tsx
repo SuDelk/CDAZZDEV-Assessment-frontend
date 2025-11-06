@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { User, BookOpen, ClipboardList } from "lucide-react";
+import { User, BookOpen, ClipboardList, Shield } from "lucide-react";
 import { CONSTANTS } from "@/lib/constants";
 
 export default function ClientLayout({
@@ -13,38 +13,38 @@ export default function ClientLayout({
   children: React.ReactNode;
 }>) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
   const pathname = usePathname();
 
   useEffect(() => {
-    const checkToken = () => {
+    const checkAuth = () => {
       const token = globalThis.localStorage?.getItem(CONSTANTS.TOKEN);
+      const userRole = globalThis.localStorage?.getItem(CONSTANTS.ROLE);
       setIsLoggedIn(!!token);
+      setRole(userRole || null);
     };
 
-    // ✅ Initial check when component mounts
-    checkToken();
+    // ✅ Initial check
+    checkAuth();
 
-    // ✅ Listen for changes in localStorage and custom token events
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === CONSTANTS.TOKEN) checkToken();
-    };
-
-    globalThis.addEventListener("storage", handleStorageChange);
-    globalThis.addEventListener(CONSTANTS.TOKEN_EVENT, checkToken);
+    // ✅ Listen for login/logout events
+    const handleAuthChange = () => checkAuth();
+    globalThis.addEventListener(CONSTANTS.TOKEN_EVENT, handleAuthChange);
 
     return () => {
-      globalThis.removeEventListener("storage", handleStorageChange);
-      globalThis.removeEventListener(CONSTANTS.TOKEN_EVENT, checkToken);
+      globalThis.removeEventListener(CONSTANTS.TOKEN_EVENT, handleAuthChange);
     };
   }, []);
 
   const handleLogout = () => {
     globalThis.localStorage?.removeItem(CONSTANTS.TOKEN);
+    globalThis.localStorage?.removeItem(CONSTANTS.ROLE);
     globalThis.dispatchEvent(new Event(CONSTANTS.TOKEN_EVENT));
     globalThis.location.href = "/";
   };
 
-  const navItems = [
+  // 🧑‍🎓 Student Nav Items
+  const studentNav = [
     {
       name: CONSTANTS.NAV.PROFILE,
       href: CONSTANTS.ROUTES.PROFILE,
@@ -62,27 +62,48 @@ export default function ClientLayout({
     },
   ];
 
+  // 🧑‍💼 Admin Nav Items
+  const adminNav = [
+    {
+      name: CONSTANTS.NAV.ADMIN.COURSES,
+      href: CONSTANTS.ROUTES.ADMIN.COURSES,
+      icon: <BookOpen size={18} />,
+    },
+    {
+      name: CONSTANTS.NAV.ADMIN.ENROLLMENTS,
+      href: CONSTANTS.ROUTES.ADMIN.ENROLLMENTS,
+      icon: <Shield size={18} />,
+    },
+  ];
+
+  // Choose nav based on role
+  const navItems = role === "admin" ? adminNav : studentNav;
+
   return (
     <>
       {/* ✅ Navbar Section */}
-      <header className="w-full flex items-center justify-between px-8 py-4 border-b border-gray-200 dark:border-gray-700 bg-background">
-        {/* Left: Logo */}
-        <Link
-          href={isLoggedIn ? CONSTANTS.ROUTES.DASHBOARD : CONSTANTS.ROUTES.ROOT}
-          className="flex items-center gap-2 hover:opacity-80 transition"
-        >
-          <Image
-            src="/logo.png"
-            alt="Logo"
-            width={38}
-            height={38}
-            className="rounded-md"
-          />
-          <span className="font-semibold text-lg">Online Learning</span>
-        </Link>
+      {isLoggedIn && (
+        <header className="w-full flex items-center justify-between px-8 py-4 border-b border-gray-200 dark:border-gray-700 bg-background">
+          {/* Left: Logo */}
+          <Link
+            href={
+              role === "admin"
+                ? CONSTANTS.ROUTES.ADMIN.DASHBOARD
+                : CONSTANTS.ROUTES.DASHBOARD
+            }
+            className="flex items-center gap-2 hover:opacity-80 transition"
+          >
+            <Image
+              src="/logo.png"
+              alt="Logo"
+              width={38}
+              height={38}
+              className="rounded-md"
+            />
+            <span className="font-semibold text-lg">Online Learning</span>
+          </Link>
 
-        {/* Center: Navigation (only when logged in) */}
-        {isLoggedIn && (
+          {/* Center: Navigation */}
           <nav className="flex items-center gap-6">
             {navItems.map((item) => (
               <Link
@@ -99,20 +120,18 @@ export default function ClientLayout({
               </Link>
             ))}
           </nav>
-        )}
 
-        {/* Right: Logout Button (only when logged in) */}
-        {isLoggedIn && (
+          {/* Right: Logout */}
           <button
             onClick={handleLogout}
             className="text-sm text-red-500 hover:underline"
           >
             Logout
           </button>
-        )}
-      </header>
+        </header>
+      )}
 
-      {/* ✅ Main Content Area */}
+      {/* ✅ Main Content */}
       <main
         className={isLoggedIn ? "min-h-[calc(100vh-64px)]" : "min-h-screen"}
       >

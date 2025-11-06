@@ -3,6 +3,7 @@ export const CONSTANTS = {
   TOKEN: "token",
   STORAGE: "storage",
   TOKEN_EVENT: "tokenChanged",
+  ROLE: "role",
 
   // 🌐 Routes
   ROUTES: {
