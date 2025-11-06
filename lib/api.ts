@@ -1,26 +1,24 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+import { CONSTANTS } from "./constants";
 
-export async function api<T>(
-  path: string,
-  method: string = "GET",
-  body?: any,
-  token?: string
-): Promise<{ status: number; data: T }> {
-  const headers: HeadersInit = { "Content-Type": "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
-
-  const res = await fetch(`${BASE_URL}${path}`, {
+export async function api(endpoint: string, method = "GET", data?: any) {
+  const res = await fetch(`${CONSTANTS.API.BASE_URL}${endpoint}`, {
     method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: globalThis.localStorage.getItem(CONSTANTS.TOKEN)
+        ? `Bearer ${globalThis.localStorage.getItem(CONSTANTS.TOKEN)}`
+        : "",
+      "x-admin-login": data?.isAdmin,
+    },
+    body: data ? JSON.stringify(data) : undefined,
   });
 
-  let data: T;
-  try {
-    data = await res.json();
-  } catch {
-    data = {} as T;
+  const json = await res.json();
+
+  if (json.token) {
+    globalThis.localStorage.setItem(CONSTANTS.TOKEN, json.token);
+    globalThis.localStorage.setItem("role", json.role); // ⬅️ Store role
   }
 
-  return { status: res.status, data };
+  return { status: res.status, data: json };
 }

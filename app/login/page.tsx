@@ -2,14 +2,20 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { CONSTANTS } from "@/lib/constants";
 
 interface LoginForm {
   email: string;
   password: string;
+  isAdmin: boolean;
 }
 
 export default function LoginPage() {
-  const [form, setForm] = useState<LoginForm>({ email: "", password: "" });
+  const [form, setForm] = useState<LoginForm>({
+    email: "",
+    password: "",
+    isAdmin: false,
+  });
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -21,24 +27,42 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
 
-    const response = await api<{ token?: string; message?: string }>(
-      "/auth/login",
-      "POST",
-      form
-    );
+    try {
+      // 🧠 Send login request
+      const response = (await api(CONSTANTS.API.AUTH.LOGIN, "POST", form)) as {
+        status: number;
+        data?: { token?: string; message?: string; role?: string };
+      };
 
-    console.log("Login response:", response);
+      console.log("Login response:", response);
 
-    if (response.status === 200 && response.data?.token) {
-      localStorage.setItem("token", response.data.token);
-      globalThis.dispatchEvent(new Event("tokenChanged"));
-      alert("Login successful!");
-      router.push("/dashboard");
-    } else {
-      alert(response.data?.message || "Invalid email or password");
+      if (response.status === 200 && response.data?.token) {
+        const { token, role } = response.data;
+
+        // 🧩 Store token + role globally
+        globalThis.localStorage.setItem(CONSTANTS.TOKEN, token);
+        globalThis.localStorage.setItem("role", role || "student");
+
+        // 🔔 Notify other components
+        globalThis.dispatchEvent(new Event(CONSTANTS.TOKEN_EVENT));
+
+        // ✅ Redirect based on role
+        if (role === "admin") {
+          alert(CONSTANTS.MESSAGES.ADMIN_LOGIN_SUCCESS);
+          router.push(CONSTANTS.ROUTES.ADMIN.DASHBOARD);
+        } else {
+          alert(CONSTANTS.MESSAGES.LOGIN_SUCCESS);
+          router.push(CONSTANTS.ROUTES.DASHBOARD);
+        }
+      } else {
+        alert(response.data?.message || CONSTANTS.MESSAGES.LOGIN_FAIL);
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      alert(CONSTANTS.MESSAGES.LOGIN_FAIL);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
@@ -48,21 +72,38 @@ export default function LoginPage() {
         className="bg-(--color-background) text-(--color-foreground) border border-gray-200 dark:border-gray-700 p-8 rounded-2xl shadow-lg w-80 transition-all duration-300"
       >
         <h2 className="text-2xl font-bold mb-4 text-center">Login</h2>
+
         <input
           name="email"
           placeholder="Email"
           onChange={handleChange}
           value={form.email}
+          required
           className="border border-gray-300 dark:border-gray-600 bg-transparent text-foreground placeholder-gray-400 p-2 mb-3 w-full rounded outline-none focus:ring-2 focus:ring-blue-500"
         />
+
         <input
           name="password"
           type="password"
           placeholder="Password"
           onChange={handleChange}
           value={form.password}
+          required
           className="border border-gray-300 dark:border-gray-600 bg-transparent text-foreground placeholder-gray-400 p-2 mb-4 w-full rounded outline-none focus:ring-2 focus:ring-blue-500"
         />
+
+        {/* admin login tick */}
+        <input
+          type="checkbox"
+          name="isAdmin"
+          checked={form.isAdmin}
+          onChange={(e) => setForm({ ...form, isAdmin: e.target.checked })}
+          className="mr-2 accent-blue-600"
+        />
+        <label htmlFor="isAdmin" className="text-sm text-foreground">
+          Login as Admin
+        </label>
+
         <button
           type="submit"
           disabled={loading}
@@ -73,7 +114,10 @@ export default function LoginPage() {
 
         <p className="text-sm text-center mt-4">
           Don’t have an account?{" "}
-          <a href="/register" className="text-blue-500 hover:underline">
+          <a
+            href={CONSTANTS.ROUTES.REGISTER}
+            className="text-blue-500 hover:underline"
+          >
             Register
           </a>
         </p>

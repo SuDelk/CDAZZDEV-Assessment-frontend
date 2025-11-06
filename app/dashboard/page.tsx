@@ -1,4 +1,3 @@
-
-export default function DashboardNav() {
+export default function Dashboard() {
   return <div></div>;
 }
