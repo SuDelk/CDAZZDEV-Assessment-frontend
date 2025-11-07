@@ -1,7 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
+
+import { useEffect, useState, useRef } from "react";
 import { api } from "@/lib/api";
 import { CONSTANTS } from "@/lib/constants";
+import Swal from "sweetalert2";
+import Pagination from "@mui/material/Pagination";
+import Stack from "@mui/material/Stack";
 
 interface Enrollment {
   _id: string;
@@ -39,9 +43,26 @@ export default function EnrollStudentPage() {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
 
-  // 🧠 Fetch all students, courses, and enrollments
-  async function fetchAllData() {
+  const [studentSearch, setStudentSearch] = useState("");
+  const [courseSearch, setCourseSearch] = useState("");
+  const [showStudentDropdown, setShowStudentDropdown] = useState(false);
+  const [showCourseDropdown, setShowCourseDropdown] = useState(false);
+
+  const [filterStudent, setFilterStudent] = useState("");
+  const [filterCourse, setFilterCourse] = useState("");
+  const [filterStatus, setFilterStatus] = useState<"" | "active" | "completed">(
+    ""
+  );
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  const studentRef = useRef<HTMLDivElement>(null);
+  const courseRef = useRef<HTMLDivElement>(null);
+
+  const fetchAllData = async () => {
     setLoading(true);
     try {
       const [usersRes, coursesRes, enrollmentsRes] = await Promise.all([
@@ -51,27 +72,41 @@ export default function EnrollStudentPage() {
       ]);
 
       setStudents(
-        usersRes.data?.filter((u: User) => u?.role === "student") || []
+        usersRes.data?.filter((u: User) => u.role === "student") || []
       );
       setCourses(coursesRes.data || []);
       setEnrollments(enrollmentsRes.data || []);
     } catch (err) {
       console.error(err);
-      alert("Failed to load data");
+      Swal.fire("Error", "Failed to load data", "error");
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
     fetchAllData();
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        studentRef.current &&
+        !studentRef.current.contains(e.target as Node)
+      ) {
+        setShowStudentDropdown(false);
+      }
+      if (courseRef.current && !courseRef.current.contains(e.target as Node)) {
+        setShowCourseDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // 🧾 Submit new enrollment
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.userId || !form.courseId) {
-      alert("Please select both student and course");
+      Swal.fire("Warning", "Please select both student and course", "warning");
       return;
     }
 
@@ -79,171 +114,176 @@ export default function EnrollStudentPage() {
     try {
       const res = await api(CONSTANTS.API.ENROLLMENTS.CREATE, "POST", form);
       if (res.status === 201) {
-        alert("✅ Student enrolled successfully!");
+        Swal.fire("Success", "Student enrolled successfully!", "success");
         setForm({ userId: "", courseId: "", status: "active" });
+        setStudentSearch("");
+        setCourseSearch("");
+        setModalOpen(false);
         fetchAllData();
       } else {
-        alert(res.data?.message || "Failed to enroll student");
+        Swal.fire(
+          "Error",
+          res.data?.message || "Failed to enroll student",
+          "error"
+        );
       }
     } catch (error) {
       console.error(error);
-      alert("Error enrolling student");
+      Swal.fire("Error", "Error enrolling student", "error");
     } finally {
       setSubmitting(false);
     }
   };
 
-  // ✏️ Update enrollment status
   const handleUpdate = async (id: string, status: "active" | "completed") => {
-    if (!confirm("Are you sure you want to update this enrollment?")) return;
+    const confirmed = await Swal.fire({
+      title: "Change Enrollment Status?",
+      text: "Are you sure you want to update this enrollment?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Yes",
+    });
+
+    if (!confirmed.isConfirmed) return;
+
     try {
       const res = await api(CONSTANTS.API.ENROLLMENTS.UPDATE(id), "PUT", {
         status,
       });
       if (res.status === 200) {
-        alert("✅ Enrollment updated successfully");
+        Swal.fire("Success", "Enrollment updated successfully", "success");
         fetchAllData();
       } else {
-        alert(res.data?.message || "Failed to update");
+        Swal.fire("Error", res.data?.message || "Failed to update", "error");
       }
     } catch (err) {
       console.error(err);
-      alert("Error updating enrollment");
+      Swal.fire("Error", "Error updating enrollment", "error");
     }
   };
 
-  // 🗑️ Delete enrollment
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this enrollment?")) return;
+    const confirmed = await Swal.fire({
+      title: "Delete Enrollment?",
+      text: "Are you sure you want to delete this enrollment?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Delete",
+    });
+
+    if (!confirmed.isConfirmed) return;
+
     try {
       const res = await api(CONSTANTS.API.ENROLLMENTS.DELETE(id), "DELETE");
       if (res.status === 200) {
-        alert("🗑️ Enrollment deleted");
+        Swal.fire("Deleted!", "Enrollment deleted successfully", "success");
         fetchAllData();
       } else {
-        alert(res.data?.message || "Failed to delete");
+        Swal.fire("Error", res.data?.message || "Failed to delete", "error");
       }
     } catch (err) {
       console.error(err);
-      alert("Error deleting enrollment");
+      Swal.fire("Error", "Error deleting enrollment", "error");
     }
   };
 
+  const filteredEnrollments = enrollments.filter((e) => {
+    const matchesStudent = e.userId.name
+      .toLowerCase()
+      .includes(filterStudent.toLowerCase());
+    const matchesCourse = e.courseId.title
+      .toLowerCase()
+      .includes(filterCourse.toLowerCase());
+    const matchesStatus = filterStatus ? e.status === filterStatus : true;
+    return matchesStudent && matchesCourse && matchesStatus;
+  });
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentEnrollments = filteredEnrollments.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+  const totalPages = Math.ceil(filteredEnrollments.length / itemsPerPage);
+
+  const filteredStudents = students.filter((s) =>
+    s.name.toLowerCase().includes(studentSearch.toLowerCase())
+  );
+
+  const filteredCourses = courses.filter((c) =>
+    c.title.toLowerCase().includes(courseSearch.toLowerCase())
+  );
+
+  const handleStudentSelect = (student: User) => {
+    setForm({ ...form, userId: student._id });
+    setStudentSearch(student.name);
+    setShowStudentDropdown(false);
+  };
+
+  const handleCourseSelect = (course: Course) => {
+    setForm({ ...form, courseId: course._id });
+    setCourseSearch(course.title);
+    setShowCourseDropdown(false);
+  };
+
   return (
-    <div className="flex flex-col items-center min-h-screen bg-background text-foreground p-4 transition-colors duration-300">
-      {/* Enrollment Form */}
-      <form
-        onSubmit={handleSubmit}
-        className="bg-(--color-background) text-(--color-foreground) border border-gray-200 dark:border-gray-700 p-8 rounded-2xl shadow-lg w-[90%] sm:w-96 mb-10 transition-all duration-300"
-      >
-        <h2 className="text-2xl font-bold mb-6 text-center">Enroll Student</h2>
+    <div className="max-w-5xl mx-auto mt-10 p-6 bg-white dark:bg-zinc-900 rounded-2xl shadow">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-blue-600">Enrollments</h1>
+        <button
+          onClick={() => setModalOpen(true)}
+          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+        >
+          Add New Enrollment
+        </button>
+      </div>
 
-        {loading ? (
-          <p className="text-center text-gray-500">Loading...</p>
-        ) : (
-          <>
-            {/* Student Selection */}
-            <label htmlFor="userId" className="block text-sm font-medium mb-1">
-              Select Student
-            </label>
-            <select
-              name="userId"
-              value={form.userId}
-              onChange={(e) => setForm({ ...form, userId: e.target.value })}
-              required
-              className="border border-gray-300 dark:border-gray-600 bg-transparent text-foreground p-2 mb-4 w-full rounded outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">-- Choose Student --</option>
-              {students.map((student) => (
-                <option
-                  key={student._id}
-                  value={student._id}
-                  className="text-black"
-                >
-                  {student.name} ({student.email})
-                </option>
-              ))}
-            </select>
+      {/* Filters in one line */}
+      <div className="flex flex-wrap gap-4 mb-4 items-center">
+        <input
+          type="text"
+          placeholder="Filter by student..."
+          value={filterStudent}
+          onChange={(e) => {
+            setFilterStudent(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="border p-2 rounded flex-1 min-w-[150px]"
+        />
 
-            {/* Course Selection */}
-            <label
-              htmlFor="courseId"
-              className="block text-sm font-medium mb-1"
-            >
-              Select Course
-            </label>
-            <select
-              name="courseId"
-              value={form.courseId}
-              onChange={(e) => setForm({ ...form, courseId: e.target.value })}
-              required
-              className="border border-gray-300 dark:border-gray-600 bg-transparent text-foreground p-2 mb-4 w-full rounded outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">-- Choose Course --</option>
-              {courses.map((course) => (
-                <option
-                  key={course._id}
-                  value={course._id}
-                  className="text-black"
-                >
-                  {course.title}
-                </option>
-              ))}
-            </select>
+        <input
+          type="text"
+          placeholder="Filter by course..."
+          value={filterCourse}
+          onChange={(e) => {
+            setFilterCourse(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="border p-2 rounded flex-1 min-w-[150px]"
+        />
 
-            {/* Status */}
-            <label htmlFor="status" className="block text-sm font-medium mb-1">
-              Status
-            </label>
-            <select
-              name="status"
-              value={form.status}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  status: e.target.value as "active" | "completed",
-                })
-              }
-              className="border border-gray-300 dark:border-gray-600 bg-transparent text-foreground p-2 mb-6 w-full rounded outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="active" className="text-black">
-                Active
-              </option>
-              <option value="completed" className="text-black">
-                Completed
-              </option>
-            </select>
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded transition-colors duration-200 disabled:opacity-60"
-            >
-              {submitting ? "Enrolling..." : "Enroll Student"}
-            </button>
-          </>
-        )}
-      </form>
+        <select
+          value={filterStatus}
+          onChange={(e) => {
+            setFilterStatus(e.target.value as "" | "active" | "completed");
+            setCurrentPage(1);
+          }}
+          className="border p-2 rounded flex-1 min-w-[120px]"
+        >
+          <option value="">All Statuses</option>
+          <option value="active">Active</option>
+          <option value="completed">Completed</option>
+        </select>
+      </div>
 
       {/* Enrollment Table */}
-      <div className="w-full max-w-4xl bg-(--color-background) border border-gray-200 dark:border-gray-700 rounded-2xl shadow-lg p-4 overflow-x-auto">
-        <h3 className="text-xl font-semibold mb-4 text-center">
-          All Enrollments
-        </h3>
-
-        {/* ✅ Extracted nested ternary into a separate renderContent variable */}
-        {(() => {
-          if (loading) {
-            return <p className="text-center text-gray-500">Loading...</p>;
-          }
-
-          if (enrollments.length === 0) {
-            return (
-              <p className="text-center text-gray-500">No enrollments found</p>
-            );
-          }
-
-          return (
+      <div className="overflow-x-auto">
+        {loading && <p className="text-center text-gray-500">Loading...</p>}
+        {!loading && filteredEnrollments.length === 0 && (
+          <p className="text-center text-gray-500">No enrollments found</p>
+        )}
+        {!loading && filteredEnrollments.length > 0 && (
+          <>
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-gray-100 dark:bg-gray-800">
@@ -262,16 +302,19 @@ export default function EnrollStudentPage() {
                 </tr>
               </thead>
               <tbody>
-                {enrollments.map((enroll) => (
-                  <tr key={enroll._id} className="text-center">
+                {currentEnrollments.map((enroll) => (
+                  <tr
+                    key={enroll._id}
+                    className="text-center hover:bg-gray-50 dark:hover:bg-zinc-800 transition"
+                  >
                     <td className="p-2 border border-gray-300 dark:border-gray-700">
-                      {enroll.userId?.name} <br />
+                      {enroll.userId.name} <br />
                       <span className="text-xs text-gray-500">
-                        {enroll.userId?.email}
+                        {enroll.userId.email}
                       </span>
                     </td>
                     <td className="p-2 border border-gray-300 dark:border-gray-700">
-                      {enroll.courseId?.title}
+                      {enroll.courseId.title}
                     </td>
                     <td className="p-2 border border-gray-300 dark:border-gray-700 capitalize">
                       {enroll.status}
@@ -284,13 +327,13 @@ export default function EnrollStudentPage() {
                             enroll.status === "active" ? "completed" : "active"
                           )
                         }
-                        className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded"
+                        className="px-3 py-1 bg-yellow-400 hover:bg-yellow-500 text-black rounded text-sm"
                       >
                         Change Status
                       </button>
                       <button
                         onClick={() => handleDelete(enroll._id)}
-                        className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded"
+                        className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm"
                       >
                         Delete
                       </button>
@@ -299,9 +342,146 @@ export default function EnrollStudentPage() {
                 ))}
               </tbody>
             </table>
-          );
-        })()}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <Stack
+                spacing={2}
+                className="flex justify-center mt-4 w-max mx-auto"
+                sx={{
+                  "& .MuiPaginationItem-root": {
+                    color: "#1ae",
+                  },
+                  "& .Mui-selected": {
+                    backgroundColor: "#1ae",
+                    color: "#fff",
+                  },
+                  "& .MuiPaginationItem-previousNext": {
+                    color: "#1abe",
+                  },
+                }}
+              >
+                <Pagination
+                  count={totalPages}
+                  page={currentPage}
+                  onChange={(_, page) => setCurrentPage(page)}
+                  color="primary"
+                  showFirstButton
+                  showLastButton
+                  siblingCount={1}
+                  boundaryCount={1}
+                  size="small"
+                />
+              </Stack>
+            )}
+          </>
+        )}
       </div>
+
+      {/* Enrollment Modal */}
+      {modalOpen && (
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/80 flex justify-center items-start z-50 pt-30 overflow-auto">
+          <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl shadow-lg w-2/3 max-w-2xl">
+            <h2 className="text-2xl font-bold mb-6 text-center">
+              Enroll Student
+            </h2>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              {/* Student Dropdown */}
+              <div className="relative" ref={studentRef}>
+                <label className="block text-sm font-medium mb-1">
+                  Student
+                </label>
+                <input
+                  type="text"
+                  placeholder="Type student name..."
+                  value={studentSearch}
+                  onChange={(e) => {
+                    setStudentSearch(e.target.value);
+                    setShowStudentDropdown(true);
+                  }}
+                  onFocus={() => setShowStudentDropdown(true)}
+                  className="border border-gray-300 text-black bg-white p-2 w-full rounded focus:ring-2 focus:ring-blue-500"
+                />
+                {showStudentDropdown && filteredStudents.length > 0 && (
+                  <ul className="absolute z-50 w-full max-h-40 overflow-auto border border-gray-300 bg-white rounded mt-1 shadow-lg text-black">
+                    {filteredStudents.map((student) => (
+                      <li
+                        key={student._id}
+                        onClick={() => handleStudentSelect(student)}
+                        className="p-2 hover:bg-blue-100 cursor-pointer"
+                      >
+                        {student.name} ({student.email})
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {/* Course Dropdown */}
+              <div className="relative" ref={courseRef}>
+                <label className="block text-sm font-medium mb-1">Course</label>
+                <input
+                  type="text"
+                  placeholder="Type course title..."
+                  value={courseSearch}
+                  onChange={(e) => {
+                    setCourseSearch(e.target.value);
+                    setShowCourseDropdown(true);
+                  }}
+                  onFocus={() => setShowCourseDropdown(true)}
+                  className="border border-gray-300 text-black bg-white p-2 w-full rounded focus:ring-2 focus:ring-blue-500"
+                />
+                {showCourseDropdown && filteredCourses.length > 0 && (
+                  <ul className="absolute z-50 w-full max-h-40 overflow-auto border border-gray-300 bg-white rounded mt-1 shadow-lg text-black">
+                    {filteredCourses.map((course) => (
+                      <li
+                        key={course._id}
+                        onClick={() => handleCourseSelect(course)}
+                        className="p-2 hover:bg-blue-100 cursor-pointer"
+                      >
+                        {course.title}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {/* Status */}
+              <label className="block text-sm font-medium mb-1">Status</label>
+              <select
+                value={form.status}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    status: e.target.value as "active" | "completed",
+                  })
+                }
+                className="border border-gray-300 text-black bg-white p-2 mb-4 w-full rounded focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+              </select>
+
+              <div className="flex justify-between gap-2">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded disabled:opacity-50"
+                >
+                  {submitting ? "Enrolling..." : "Enroll Student"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  className="w-full bg-gray-400 hover:bg-gray-500 text-white py-2 rounded"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

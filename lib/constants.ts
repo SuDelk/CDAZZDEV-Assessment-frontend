@@ -75,6 +75,7 @@ export const CONSTANTS = {
       CREATE: "/enrollments", // ✅ used in your enrollment form
       UPDATE: (id: string | number) => `/enrollments/${id}`,
       DELETE: (id: string | number) => `/enrollments/${id}`,
+      UNENROLL: "/enrollments/unenroll", // ✅ unenroll endpoint
     },
   },
 

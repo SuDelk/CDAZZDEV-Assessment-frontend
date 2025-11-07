@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Swal from "sweetalert2";
 import { api } from "@/lib/api";
 import { CONSTANTS } from "@/lib/constants";
 
@@ -28,10 +29,14 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // 🧠 Send login request
       const response = (await api(CONSTANTS.API.AUTH.LOGIN, "POST", form)) as {
         status: number;
-        data?: { token?: string; message?: string; role?: string };
+        data?: {
+          token?: string;
+          message?: string;
+          role?: string;
+          userId?: string;
+        };
       };
 
       console.log("Login response:", response);
@@ -39,27 +44,39 @@ export default function LoginPage() {
       if (response.status === 200 && response.data?.token) {
         const { token, role } = response.data;
 
-        // 🧩 Store token + role globally
         globalThis.localStorage.setItem(CONSTANTS.TOKEN, token);
-        globalThis.localStorage.setItem("role", role || "student");
-
-        // 🔔 Notify other components
+        globalThis.localStorage.setItem(CONSTANTS.ROLE, role || "student");
         globalThis.dispatchEvent(new Event(CONSTANTS.TOKEN_EVENT));
 
-        // ✅ Redirect based on role
         if (role === "admin") {
-          alert(CONSTANTS.MESSAGES.ADMIN_LOGIN_SUCCESS);
+          await Swal.fire({
+            icon: "success",
+            title: "Admin Login Successful",
+            text: CONSTANTS.MESSAGES.ADMIN_LOGIN_SUCCESS,
+          });
           router.push(CONSTANTS.ROUTES.ADMIN.COURSES);
         } else {
-          alert(CONSTANTS.MESSAGES.LOGIN_SUCCESS);
+          await Swal.fire({
+            icon: "success",
+            title: "Login Successful",
+            text: CONSTANTS.MESSAGES.LOGIN_SUCCESS,
+          });
           router.push(CONSTANTS.ROUTES.DASHBOARD);
         }
       } else {
-        alert(response.data?.message || CONSTANTS.MESSAGES.LOGIN_FAIL);
+        Swal.fire({
+          icon: "error",
+          title: "Login Failed",
+          text: response.data?.message || CONSTANTS.MESSAGES.LOGIN_FAIL,
+        });
       }
     } catch (error) {
       console.error("Login error:", error);
-      alert(CONSTANTS.MESSAGES.LOGIN_FAIL);
+      Swal.fire({
+        icon: "error",
+        title: "Login Failed",
+        text: CONSTANTS.MESSAGES.LOGIN_FAIL,
+      });
     } finally {
       setLoading(false);
     }
@@ -92,7 +109,6 @@ export default function LoginPage() {
           className="border border-gray-300 dark:border-gray-600 bg-transparent text-foreground placeholder-gray-400 p-2 mb-4 w-full rounded outline-none focus:ring-2 focus:ring-blue-500"
         />
 
-        {/* admin login tick */}
         <input
           type="checkbox"
           name="isAdmin"
