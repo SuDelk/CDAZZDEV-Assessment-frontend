@@ -1,5 +1,3 @@
-import { ALL } from "dns";
-
 export const CONSTANTS = {
   // 🔐 Auth & Storage
   TOKEN: "token",
@@ -13,9 +11,7 @@ export const CONSTANTS = {
     LOGIN: "/login",
     REGISTER: "/register",
     DASHBOARD: "/dashboard",
-    PROFILE: "/dashboard/profile",
-    COURSES: "/dashboard/courses",
-    ENROLLMENTS: "/dashboard/enrollments",
+    COURSES: "/courses",
 
     ADMIN: {
       ROOT: "/admin",
@@ -28,9 +24,8 @@ export const CONSTANTS = {
 
   // 📘 Navigation Labels
   NAV: {
-    PROFILE: "Profile",
+    Dashboard: "Dashboard",
     COURSES: "Courses",
-    ENROLLMENTS: "Enrollments",
     ADMIN: {
       COURSES: "Courses",
       ENROLLMENTS: "Enrollments",

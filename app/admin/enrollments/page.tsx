@@ -143,7 +143,7 @@ export default function EnrollStudentPage() {
         ) : (
           <>
             {/* Student Selection */}
-            <label className="block text-sm font-medium mb-1">
+            <label htmlFor="userId" className="block text-sm font-medium mb-1">
               Select Student
             </label>
             <select
@@ -155,14 +155,21 @@ export default function EnrollStudentPage() {
             >
               <option value="">-- Choose Student --</option>
               {students.map((student) => (
-                <option key={student._id} value={student._id}>
+                <option
+                  key={student._id}
+                  value={student._id}
+                  className="text-black"
+                >
                   {student.name} ({student.email})
                 </option>
               ))}
             </select>
 
             {/* Course Selection */}
-            <label className="block text-sm font-medium mb-1">
+            <label
+              htmlFor="courseId"
+              className="block text-sm font-medium mb-1"
+            >
               Select Course
             </label>
             <select
@@ -174,14 +181,20 @@ export default function EnrollStudentPage() {
             >
               <option value="">-- Choose Course --</option>
               {courses.map((course) => (
-                <option key={course._id} value={course._id}>
+                <option
+                  key={course._id}
+                  value={course._id}
+                  className="text-black"
+                >
                   {course.title}
                 </option>
               ))}
             </select>
 
             {/* Status */}
-            <label className="block text-sm font-medium mb-1">Status</label>
+            <label htmlFor="status" className="block text-sm font-medium mb-1">
+              Status
+            </label>
             <select
               name="status"
               value={form.status}
@@ -193,8 +206,12 @@ export default function EnrollStudentPage() {
               }
               className="border border-gray-300 dark:border-gray-600 bg-transparent text-foreground p-2 mb-6 w-full rounded outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="active">Active</option>
-              <option value="completed">Completed</option>
+              <option value="active" className="text-black">
+                Active
+              </option>
+              <option value="completed" className="text-black">
+                Completed
+              </option>
             </select>
 
             <button

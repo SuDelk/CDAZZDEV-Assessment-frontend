@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { User, BookOpen, ClipboardList, Shield } from "lucide-react";
+import { User, BookOpen, Shield, LayoutDashboard } from "lucide-react";
 import { CONSTANTS } from "@/lib/constants";
 
 export default function ClientLayout({
@@ -46,19 +46,14 @@ export default function ClientLayout({
   // 🧑‍🎓 Student Nav Items
   const studentNav = [
     {
-      name: CONSTANTS.NAV.PROFILE,
-      href: CONSTANTS.ROUTES.PROFILE,
-      icon: <User size={18} />,
+      name: CONSTANTS.NAV.Dashboard,
+      href: CONSTANTS.ROUTES.DASHBOARD,
+      icon: <LayoutDashboard size={18} />,
     },
     {
       name: CONSTANTS.NAV.COURSES,
       href: CONSTANTS.ROUTES.COURSES,
       icon: <BookOpen size={18} />,
-    },
-    {
-      name: CONSTANTS.NAV.ENROLLMENTS,
-      href: CONSTANTS.ROUTES.ENROLLMENTS,
-      icon: <ClipboardList size={18} />,
     },
   ];
 

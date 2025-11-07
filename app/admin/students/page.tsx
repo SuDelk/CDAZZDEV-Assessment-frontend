@@ -156,8 +156,12 @@ export default function StudentManagement() {
           onChange={(e) => setFormData({ ...formData, role: e.target.value })}
           className="border p-2 rounded w-full"
         >
-          <option value="student">Student</option>
-          <option value="admin">Admin</option>
+          <option value="student" className="text-black">
+            Student
+          </option>
+          <option value="admin" className="text-black">
+            Admin
+          </option>
         </select>
 
         <button
@@ -171,63 +175,73 @@ export default function StudentManagement() {
 
       {/* 📋 Student List */}
       <div className="mt-8 max-w-4xl mx-auto">
-        {loading ? (
-          <p className="text-center text-gray-500">Loading students...</p>
-        ) : students.length === 0 ? (
-          <p className="text-center text-gray-500">No students found</p>
-        ) : (
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-100 dark:bg-gray-800">
-                <th className="p-2 border">Name</th>
-                <th className="p-2 border">Email</th>
-                <th className="p-2 border">Role</th>
-                <th className="p-2 border">Courses</th>
-                <th className="p-2 border">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {students.map((s) => (
-                <tr key={s._id} className="border-b">
-                  <td className="p-2">{s.name}</td>
-                  <td className="p-2">{s.email}</td>
-                  <td className="p-2 capitalize">{s.role}</td>
-                  <td className="p-2">
-                    {s.coursesEnrolled.length > 0
-                      ? s.coursesEnrolled.map((c) => c.title).join(", ")
-                      : "None"}
-                  </td>
-                  <td className="p-2 space-x-2">
-                    <button
-                      onClick={() => handleEdit(s)}
-                      className="px-2 py-1 bg-green-600 text-white rounded"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(s._id)}
-                      className="px-2 py-1 bg-red-600 text-white rounded"
-                    >
-                      Delete
-                    </button>
-                    <button
-                      onClick={() =>
-                        setSelectedStudent(
-                          selectedStudent?._id === s._id ? null : s
-                        )
-                      }
-                      className="px-2 py-1 bg-blue-600 text-white rounded"
-                    >
-                      {selectedStudent?._id === s._id
-                        ? "Hide Courses"
-                        : "View Courses"}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+        {(() => {
+          let content;
+          if (loading) {
+            content = (
+              <p className="text-center text-gray-500">Loading students...</p>
+            );
+          } else if (students.length === 0) {
+            content = (
+              <p className="text-center text-gray-500">No students found</p>
+            );
+          } else {
+            content = (
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-100 dark:bg-gray-800">
+                    <th className="p-2 border">Name</th>
+                    <th className="p-2 border">Email</th>
+                    <th className="p-2 border">Role</th>
+                    <th className="p-2 border">Courses</th>
+                    <th className="p-2 border">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {students.map((s) => (
+                    <tr key={s._id} className="border-b">
+                      <td className="p-2">{s.name}</td>
+                      <td className="p-2">{s.email}</td>
+                      <td className="p-2 capitalize">{s.role}</td>
+                      <td className="p-2">
+                        {s.coursesEnrolled.length > 0
+                          ? s.coursesEnrolled.map((c) => c.title).join(", ")
+                          : "None"}
+                      </td>
+                      <td className="p-2 space-x-2">
+                        <button
+                          onClick={() => handleEdit(s)}
+                          className="p-2 py-1 m-1 bg-green-600 text-white rounded"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(s._id)}
+                          className="px-2 py-1 m-1 bg-red-600 text-white rounded"
+                        >
+                          Delete
+                        </button>
+                        <button
+                          onClick={() =>
+                            setSelectedStudent(
+                              selectedStudent?._id === s._id ? null : s
+                            )
+                          }
+                          className="px-2 py-1 m-1 bg-blue-600 text-white rounded"
+                        >
+                          {selectedStudent?._id === s._id
+                            ? "Hide Courses"
+                            : "View Courses"}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            );
+          }
+          return content;
+        })()}
       </div>
 
       {/* Selected Student Courses */}

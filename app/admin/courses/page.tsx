@@ -20,6 +20,7 @@ export default function CourseManagement() {
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [buttonText, setButtonText] = useState("Add Course");
 
   // ✅ Fetch all courses
   const fetchCourses = async () => {
@@ -30,6 +31,16 @@ export default function CourseManagement() {
   useEffect(() => {
     fetchCourses();
   }, []);
+
+  useEffect(() => {
+    if (loading) {
+      setButtonText("Saving...");
+    } else if (editingId) {
+      setButtonText("Update Course");
+    } else {
+      setButtonText("Add Course");
+    }
+  }, [loading, editingId]);
 
   // ✅ Handle form input changes
   const handleChange = (
@@ -69,6 +80,7 @@ export default function CourseManagement() {
         setError(res.data?.message || "Error saving course");
       }
     } catch (err) {
+      console.error(err);
       setError("Network or server error");
     } finally {
       setLoading(false);
@@ -135,7 +147,7 @@ export default function CourseManagement() {
           disabled={loading}
           className="mt-4 w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
         >
-          {loading ? "Saving..." : editingId ? "Update Course" : "Add Course"}
+          {buttonText}
         </button>
       </form>
 
@@ -151,7 +163,7 @@ export default function CourseManagement() {
               <p className="font-semibold">{course.title}</p>
               <p className="text-sm text-gray-500">{course.description}</p>
               <p className="text-sm font-medium text-blue-600">
-                Rs. {course.price}
+                $ {course.price}
               </p>
             </div>
             <div className="flex gap-2">
