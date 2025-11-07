@@ -13,32 +13,51 @@ interface LoginForm {
   isAdmin: boolean;
 }
 
+interface FormErrors {
+  email?: string;
+  password?: string;
+}
+
 export default function LoginPage() {
   const [form, setForm] = useState<LoginForm>({
     email: "",
     password: "",
     isAdmin: false,
   });
+  const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  const validateEmail = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+  const validateForm = () => {
+    const newErrors: FormErrors = {};
+    if (!form.email) {
+      newErrors.email = "Email is required";
+    } else if (!validateEmail(form.email)) {
+      newErrors.email = "Invalid email address";
+    }
+
+    if (!form.password) newErrors.password = "Password is required";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+    setErrors({ ...errors, [e.target.name]: "" });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
+    if (!validateForm()) return;
     try {
       const response = (await api(CONSTANTS.API.AUTH.LOGIN, "POST", form)) as {
         status: number;
-        data?: {
-          token?: string;
-          message?: string;
-          role?: string;
-          userId?: string;
-        };
+        data?: { token?: string; role?: string; message?: string };
       };
 
       if (response.status === 200 && response.data?.token) {
@@ -86,7 +105,8 @@ export default function LoginPage() {
     <BackgroundEffects>
       <form
         onSubmit={handleSubmit}
-        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-12 rounded-3xl shadow-2xl w-96 md:w-[480px] animate-bounce-card transition-all duration-300"
+        noValidate
+        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-12 rounded-3xl shadow-2xl w-96 md:w-[480px]"
       >
         <h2 className="text-3xl font-bold mb-6 text-center">Login</h2>
 
@@ -95,9 +115,15 @@ export default function LoginPage() {
           placeholder="Email"
           onChange={handleChange}
           value={form.email}
-          required
-          className="border border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 p-3 mb-4 w-full rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+          className={`border ${
+            errors.email
+              ? "border-red-500"
+              : "border-gray-300 dark:border-gray-600"
+          } bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 p-3 mb-1 w-full rounded-lg outline-none focus:ring-2 focus:ring-blue-500`}
         />
+        {errors.email && (
+          <p className="text-red-500 text-sm mb-3">{errors.email}</p>
+        )}
 
         <input
           name="password"
@@ -105,11 +131,17 @@ export default function LoginPage() {
           placeholder="Password"
           onChange={handleChange}
           value={form.password}
-          required
-          className="border border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 p-3 mb-5 w-full rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+          className={`mt-2 border ${
+            errors.password
+              ? "border-red-500"
+              : "border-gray-300 dark:border-gray-600"
+          } bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 p-3 mb-1 w-full rounded-lg outline-none focus:ring-2 focus:ring-blue-500`}
         />
+        {errors.password && (
+          <p className="text-red-500 text-sm mb-3">{errors.password}</p>
+        )}
 
-        <div className="flex items-center mb-6">
+        <div className="flex items-center mb-6 mt-2">
           <input
             type="checkbox"
             name="isAdmin"
@@ -132,16 +164,6 @@ export default function LoginPage() {
         >
           {loading ? "Signing In..." : "Sign In"}
         </button>
-
-        <p className="text-sm text-center mt-6 text-gray-900 dark:text-gray-100">
-          Don’t have an account?{" "}
-          <a
-            href={CONSTANTS.ROUTES.REGISTER}
-            className="text-blue-500 hover:underline"
-          >
-            Register
-          </a>
-        </p>
       </form>
     </BackgroundEffects>
   );
