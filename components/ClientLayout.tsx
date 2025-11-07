@@ -103,7 +103,7 @@ export default function ClientLayout({
   return (
     <>
       {/* ✅ Navbar Section */}
-      {isLoggedIn && (
+      {isLoggedIn ? (
         <header className="w-full flex items-center justify-between px-8 py-4 border-b border-gray-200 dark:border-gray-700 bg-background">
           {/* Left: Logo */}
           <Link
@@ -150,7 +150,21 @@ export default function ClientLayout({
             Logout
           </button>
         </header>
-      )}
+      ) : <header className="w-full flex items-center justify-between px-8 py-4 border-b border-gray-200 dark:border-gray-700 bg-background">
+        <Link
+            href="/"
+            className="flex items-center gap-2 hover:opacity-80 transition"
+          >
+            <Image
+              src="/logo.png"
+              alt="Logo"
+              width={38}
+              height={38}
+              className="rounded-md"
+            />
+            <span className="font-semibold text-lg">Online Learning</span>
+          </Link>
+        </header>}
 
       {/* ✅ Main Content */}
       <main

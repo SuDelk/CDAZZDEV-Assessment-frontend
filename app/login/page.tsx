@@ -1,9 +1,11 @@
 "use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import { api } from "@/lib/api";
 import { CONSTANTS } from "@/lib/constants";
+import BackgroundEffects from "@/components/BackgroundEffects";
 
 interface LoginForm {
   email: string;
@@ -38,8 +40,6 @@ export default function LoginPage() {
           userId?: string;
         };
       };
-
-      console.log("Login response:", response);
 
       if (response.status === 200 && response.data?.token) {
         const { token, role } = response.data;
@@ -83,12 +83,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background text-foreground transition-colors duration-300">
+    <BackgroundEffects>
       <form
         onSubmit={handleSubmit}
-        className="bg-(--color-background) text-(--color-foreground) border border-gray-200 dark:border-gray-700 p-8 rounded-2xl shadow-lg w-80 transition-all duration-300"
+        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-12 rounded-3xl shadow-2xl w-96 md:w-[480px] animate-bounce-card transition-all duration-300"
       >
-        <h2 className="text-2xl font-bold mb-4 text-center">Login</h2>
+        <h2 className="text-3xl font-bold mb-6 text-center">Login</h2>
 
         <input
           name="email"
@@ -96,7 +96,7 @@ export default function LoginPage() {
           onChange={handleChange}
           value={form.email}
           required
-          className="border border-gray-300 dark:border-gray-600 bg-transparent text-foreground placeholder-gray-400 p-2 mb-3 w-full rounded outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 p-3 mb-4 w-full rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
         />
 
         <input
@@ -106,29 +106,34 @@ export default function LoginPage() {
           onChange={handleChange}
           value={form.password}
           required
-          className="border border-gray-300 dark:border-gray-600 bg-transparent text-foreground placeholder-gray-400 p-2 mb-4 w-full rounded outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 p-3 mb-5 w-full rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
         />
 
-        <input
-          type="checkbox"
-          name="isAdmin"
-          checked={form.isAdmin}
-          onChange={(e) => setForm({ ...form, isAdmin: e.target.checked })}
-          className="mr-2 accent-blue-600"
-        />
-        <label htmlFor="isAdmin" className="text-sm text-foreground">
-          Login as Admin
-        </label>
+        <div className="flex items-center mb-6">
+          <input
+            type="checkbox"
+            name="isAdmin"
+            checked={form.isAdmin}
+            onChange={(e) => setForm({ ...form, isAdmin: e.target.checked })}
+            className="mr-2 accent-blue-600 w-5 h-5"
+          />
+          <label
+            htmlFor="isAdmin"
+            className="text-sm text-gray-900 dark:text-gray-100"
+          >
+            Login as Admin
+          </label>
+        </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded transition-colors duration-200 disabled:opacity-60"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg text-lg transition-colors duration-200 disabled:opacity-60"
         >
           {loading ? "Signing In..." : "Sign In"}
         </button>
 
-        <p className="text-sm text-center mt-4">
+        <p className="text-sm text-center mt-6 text-gray-900 dark:text-gray-100">
           Don’t have an account?{" "}
           <a
             href={CONSTANTS.ROUTES.REGISTER}
@@ -138,6 +143,6 @@ export default function LoginPage() {
           </a>
         </p>
       </form>
-    </div>
+    </BackgroundEffects>
   );
 }

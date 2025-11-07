@@ -1,8 +1,11 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { CONSTANTS } from "@/lib/constants";
 import Swal from "sweetalert2";
+import Pagination from "@mui/material/Pagination";
+import Stack from "@mui/material/Stack";
 
 interface Course {
   _id: string;
@@ -24,6 +27,10 @@ export default function CoursesPage() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "enrolled" | "notEnrolled">("all");
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4;
 
   useEffect(() => {
     async function fetchData() {
@@ -58,7 +65,10 @@ export default function CoursesPage() {
         Swal.fire("Enrolled!", "You have successfully enrolled in this course.", "success");
         setStudent({
           ...student,
-          coursesEnrolled: [...student.coursesEnrolled, courses.find((c) => c._id === courseId)!],
+          coursesEnrolled: [
+            ...student.coursesEnrolled,
+            courses.find((c) => c._id === courseId)!,
+          ],
         });
       } else {
         Swal.fire("Error", res.data?.message || "Failed to enroll", "error");
@@ -118,6 +128,7 @@ export default function CoursesPage() {
     }
   };
 
+  // Filtered Courses
   const filteredCourses = courses.filter((course) => {
     const enrolled = student?.coursesEnrolled.some((c) => c._id === course._id);
     const matchesTitle = course.title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -127,6 +138,13 @@ export default function CoursesPage() {
 
     return matchesTitle;
   });
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredCourses.length / itemsPerPage);
+  const displayedCourses = filteredCourses.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   if (loading) return <p className="text-center mt-10">Loading...</p>;
 
@@ -155,11 +173,11 @@ export default function CoursesPage() {
       </div>
 
       {/* Course List */}
-      {filteredCourses.length === 0 ? (
+      {displayedCourses.length === 0 ? (
         <p className="text-center text-gray-500">No courses found.</p>
       ) : (
         <ul className="space-y-4">
-          {filteredCourses.map((course) => {
+          {displayedCourses.map((course) => {
             const enrolled = student?.coursesEnrolled.some((c) => c._id === course._id);
             return (
               <li
@@ -194,6 +212,35 @@ export default function CoursesPage() {
             );
           })}
         </ul>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Stack
+          spacing={2}
+          className="flex justify-center mt-4 w-max mx-auto"
+          sx={{
+            "& .MuiPaginationItem-root": {
+              color: "#1ae",
+            },
+            "& .Mui-selected": {
+              backgroundColor: "#1ae",
+              color: "#fff",
+            },
+          }}
+        >
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={(_, page) => setCurrentPage(page)}
+            color="primary"
+            showFirstButton
+            showLastButton
+            siblingCount={1}
+            boundaryCount={1}
+            size="small"
+          />
+        </Stack>
       )}
     </div>
   );
