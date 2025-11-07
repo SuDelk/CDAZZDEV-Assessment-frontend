@@ -188,7 +188,7 @@ export default function EnrollStudentPage() {
   };
 
   const filteredEnrollments = enrollments.filter((e) => {
-    const matchesStudent = e.userId.name
+    const matchesStudent = e.userId?.name
       .toLowerCase()
       .includes(filterStudent.toLowerCase());
     const matchesCourse = e.courseId.title

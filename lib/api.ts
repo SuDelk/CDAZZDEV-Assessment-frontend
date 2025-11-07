@@ -17,7 +17,7 @@ export async function api(endpoint: string, method = "GET", data?: any) {
 
   if (json.token) {
     globalThis.localStorage.setItem(CONSTANTS.TOKEN, json.token);
-    globalThis.localStorage.setItem("role", json.role); // ⬅️ Store role
+    globalThis.localStorage.setItem(CONSTANTS.ROLE, json.role);
   }
 
   return { status: res.status, data: json };

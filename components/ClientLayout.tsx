@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { User, BookOpen, Shield, LayoutDashboard } from "lucide-react";
 import { CONSTANTS } from "@/lib/constants";
+import Swal from "sweetalert2";
 
 export default function ClientLayout({
   children,
@@ -36,12 +37,32 @@ export default function ClientLayout({
     };
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "Do you want to logout?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, logout",
+    cancelButtonText: "Cancel",
+    reverseButtons: true,
+  });
+
+  if (result.isConfirmed) {
     globalThis.localStorage?.removeItem(CONSTANTS.TOKEN);
     globalThis.localStorage?.removeItem(CONSTANTS.ROLE);
     globalThis.dispatchEvent(new Event(CONSTANTS.TOKEN_EVENT));
-    globalThis.location.href = "/";
-  };
+    
+    Swal.fire({
+      title: "Logged out!",
+      icon: "success",
+      timer: 1000,
+      showConfirmButton: false,
+    }).then(() => {
+      globalThis.location.href = "/";
+    });
+  }
+};
 
   // 🧑‍🎓 Student Nav Items
   const studentNav = [
@@ -124,7 +145,7 @@ export default function ClientLayout({
           {/* Right: Logout */}
           <button
             onClick={handleLogout}
-            className="text-sm text-red-500 hover:underline"
+            className="text-sm text-red-500 hover:text-orange-500 transition hover:cursor-pointer"
           >
             Logout
           </button>
